@@ -1,0 +1,287 @@
+<?php
+session_start();
+//Database Configuration File
+include('includes/config.php');
+error_reporting(0);
+if(isset($_POST['signup']))
+{
+//Getting Post Values
+$fname=$_POST['fullname'];  
+$emaill=$_POST['emailid']; 
+$cnumber=$_POST['contactnumber']; 
+//Password hashing
+$password=$_POST['jspassword'];
+$options = ['cost' => 12];
+$hashedpass=password_hash($password, PASSWORD_BCRYPT, $options);
+//getting logo
+$logo=$_FILES["resume"]["name"];
+// get the image extension
+$extension = substr($logo,strlen($logo)-4,strlen($logo));
+// allowed extensions
+$allowed_extensions = array(".pdf","docx",".doc");
+// Validation for allowed extensions .in_array() function searches an array for a specific value.
+if(!in_array($extension,$allowed_extensions))
+{
+echo "<script>alert('تنسيق ملف السيرة الذاتية غير صالح. يسمح فقط بتنسيق pdf / docx / doc');</script>";
+}
+else
+{
+//rename the image file
+$resumename=md5($logo).time().$extension;
+// Code for move image into directory
+move_uploaded_file($_FILES["resume"]["tmp_name"],"../files/Jobseekersresumes/".$resumename);
+
+//getting logo
+$logo=$_FILES["pic"]["name"];
+// get the image extension
+$extension = substr($logo,strlen($logo)-4,strlen($logo));
+// allowed extensions
+$allowed_extensions = array(".jpg","jpeg",".png",".gif");
+// Validation for allowed extensions .in_array() function searches an array for a specific value.
+if(!in_array($extension,$allowed_extensions))
+{
+echo "<script>alert('تنسيق ملف الصورة غير صالح. يسمح فقط بتنسيق jpg / jpeg / png / gif');</script>";
+}
+else
+{
+//rename the image file
+$logoname=md5($logo).$extension;
+// Code for move image into directory
+move_uploaded_file($_FILES["pic"]["tmp_name"],"../files/images/".$logoname);
+}
+
+// Query for validation of  email-id
+$ret="SELECT * FROM  tbljobseekers where (EmailId=:uemail || ContactNumber=:cnumber)";
+$queryt = $dbh -> prepare($ret);
+$queryt->bindParam(':uemail',$emaill,PDO::PARAM_STR);
+$queryt->bindParam(':cnumber',$cnumber,PDO::PARAM_STR);
+$queryt -> execute();
+$results = $queryt -> fetchAll(PDO::FETCH_OBJ);
+if($queryt -> rowCount() == 0)
+{
+// Query for Insertion
+$isactive=0;
+$sql="INSERT INTO tbljobseekers(FullName,EmailId,ContactNumber,Password,Resume,ProfilePic,IsActive) VALUES(:fname,:emaill,:cnumber,:hashedpass,:resumename,:profilepic,:isactive)";
+$query = $dbh->prepare($sql);
+// Binding Post Values
+$query->bindParam(':fname',$fname,PDO::PARAM_STR);
+$query->bindParam(':emaill',$emaill,PDO::PARAM_STR);
+$query->bindParam(':cnumber',$cnumber,PDO::PARAM_STR);
+$query->bindParam(':hashedpass',$hashedpass,PDO::PARAM_STR);
+$query->bindParam(':resumename',$resumename,PDO::PARAM_STR);
+$query->bindParam(':profilepic',$logoname,PDO::PARAM_STR);
+$query->bindParam(':isactive',$isactive,PDO::PARAM_STR);
+$query->execute();
+$lastInsertId = $dbh->lastInsertId();
+if($lastInsertId)
+{
+$msg="لقد قمت بالتسجيل بنجاح";
+}
+else 
+{
+$error="حدث خطأ، يرجى اعادة المحاولة";
+}
+}
+ else
+{
+$error="البريد الالكتروني او رقم الهاتف موجود بالفعل";
+}
+}
+}
+?>
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الباحثين عن عمل | تسجيل حساب</title>
+<link href="css/custom.css" rel="stylesheet" type="text/css">
+<link href="css/bootstrap.css" rel="stylesheet" type="text/css">
+<link href="css/bootstrap-rtl.css" rel="stylesheet" type="text/css">
+<link href="css/color.css" rel="stylesheet" type="text/css">
+<link href="css/responsive.css" rel="stylesheet" type="text/css">
+<link href="css/owl.carousel.css" rel="stylesheet" type="text/css">
+<link href="css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="css/editor.css" type="text/css" rel="stylesheet"/>
+<link href="css/jquery.mCustomScrollbar.css" rel="stylesheet" type="text/css">
+<link href='https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,500,700,900' rel='stylesheet' type='text/css'>
+ <script>
+function useremailAvailability() {
+
+jQuery.ajax({
+url: "check_availability.php",
+data:'emailid='+$("#emailid").val(),
+type: "POST",
+success:function(data){
+$("#user-emailavailability-status").html(data);
+},
+error:function (){}
+});
+}
+</script>
+</head>
+
+<body class="theme-style-1">
+<div id="wrapper"> 
+<!--HEADER START-->
+ <?php include('includes/header.php');?>
+<!--HEADER END--> 
+
+  
+  <!--INNER BANNER START-->
+  <section id="inner-banner">
+
+    <div class="container">
+
+      <h1>الباحثين عن عمل</h1>
+
+    </div>
+
+  </section>
+
+  <!--INNER BANNER END--> 
+
+  
+
+  <!--MAIN START-->
+
+  <div id="main">
+
+    <section class="account-option">
+
+      <div class="container">
+
+        <div class="inner-box">
+
+          <div class="text-box">
+
+            <h4>لديك حساب؟</h4>
+
+            <p>إذا لم يكن لديك حساب ، يمكنك إنشاء حساب أدناه عن طريق إدخال عنوان بريدك الإلكتروني. </p>
+
+          </div>
+
+          <a href="sign-in.php" class="btn-style-1"><i class="fa fa-sign-in"></i>تسجيل دخول الان</a> </div>
+
+      </div>
+
+    </section>
+
+    <!--ACCOUNT OPTION SECTION END--> 
+
+
+     
+    
+
+    <!--Signup FORM START-->
+    <form name="empsignup" enctype="multipart/form-data" method="post">
+    <section class="resum-form padd-tb">
+
+      <div class="container">
+    <!--Success and error message -->
+     <?php if(@$error){ ?><div class="errorWrap">
+        <strong>خطأ</strong> : <?php echo htmlentities($error);?></div><?php } ?>
+
+        <?php if(@$msg){ ?><div class="succMsg">
+        <strong>نجحت العملية</strong> : <?php echo htmlentities($msg);?></div><?php } ?>
+
+          <div class="row">
+
+<div class="col-md-6 col-sm-6">
+<label>الاسم الكامل<span style="color:red">*</span></label>
+<input type="text" name="fullname" placeholder="الاسم الكامل" required autocomplete="off" />
+</div>
+
+<div class="col-md-6 col-sm-6">
+<label>البريد الالكتروني<span style="color:red">*</span></label>
+<input type="email" name="emailid" id="emailid" onBlur="useremailAvailability()"  placeholder="you@domain.com" autocomplete="off"  required>
+ <span id="user-emailavailability-status" style="font-size:12px;"></span>
+</div>
+
+
+<div class="col-md-6 col-sm-6">
+<label>رقم الهاتف<span style="color:red">*</span></label>
+<input type="text" name="contactnumber" id="contactnumber" onBlur="usercontactnoAvailability()"  placeholder="e.g. 1234567890" autocomplete="off" pattern="[0-9]+" title="only numeric digit allowed" maxlength="11" required>
+ <span id="user-availability-status1" style="font-size:12px;"></span>
+</div>
+
+
+
+ <div class="col-md-6 col-sm-6">
+ <label>كلمة المرور<span style="color:red">*</span></label>
+<input type="password" name="jspassword" placeholder="e.g. “Pass@20178”" autocomplete="off" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" title="at least one number and one uppercase and lowercase letter, and at least 6 or more characters"  required>
+</div>
+
+<div class="col-md-6 col-sm-6">
+  <label>السيرة الذاتية<span style="color:red">*</span> <span style="font-size:12px;">(يسمح فقط بملفات pdf و doc)</span></label>
+  <div class="upload-box">
+  <div class="hold">
+    <input type="file" name="resume"  required>
+  </div>
+</div>
+          </div>  
+
+<div class="col-md-6 col-sm-6">
+<label>الصورة<span style="color:red">*</span></label>
+<div class="upload-box">
+  <div class="hold">
+    <input type="file" name="pic"  required>
+  </div>
+</div>
+
+            </div>     
+
+         
+
+
+            <div class="col-md-12">
+
+              <div class="btn-col">
+
+                <input type="submit" name="signup" id="submit" value="تسجيل">
+
+              </div>
+
+            </div>
+
+          </div>
+
+    
+
+      </div>
+
+    </section>
+    </form>
+    <!--RESUME FORM END--> 
+
+  </div>
+
+  <!--MAIN END--> 
+
+  
+
+  <!--FOOTER START-->
+
+  <?php include('includes/footer.php');?>
+  <!--FOOTER END--> 
+
+</div>
+
+
+<script src="js/jquery-1.11.3.min.js"></script> 
+<script src="js/bootstrap.min.js"></script> 
+<script src="js/owl.carousel.min.js"></script> 
+<script src="js/jquery.velocity.min.js"></script> 
+<script src="js/jquery.kenburnsy.js"></script> 
+<script src="js/jquery.mCustomScrollbar.concat.min.js"></script> 
+<script src="js/editor.js"></script> 
+<script src="js/jquery.accordion.js"></script> 
+<script src="js/jquery.noconflict.js"></script> 
+<script src="js/theme-scripts.js"></script> 
+<script src="js/custom.js"></script>
+
+</body>
+
+</html>
+
